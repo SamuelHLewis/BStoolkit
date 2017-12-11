@@ -8,6 +8,11 @@ import shutil
 import re
 import argparse
 
+#############################
+## DEFAULT ARGUMENT VALUES ##
+#############################
+FeatureFiles = None
+
 ###########################
 ## USER ARGUMENT PARSING ##
 ###########################
@@ -22,8 +27,8 @@ if InputFile is not None:
 else:
 	print('ERROR: no input file specified')
 # feature file parsing
-FeatureFiles = args.featurefiles.split(",")
-if len(FeatureFiles) > 0:
+if args.featurefiles is not None:
+	FeatureFiles = args.featurefiles.split(",")
 	for i in FeatureFiles:
 		print('Feature file = ' + i)
 
@@ -75,7 +80,7 @@ def MEtoBED(MEfile):
 		MethylationTotal += float(i.split("\t")[4])
 	MethylationLevel = MethylationTotal/Ccount
 	print("Genome-wide methylation level for " + BedFile + "= " + str(MethylationLevel) + "%")
-	GenomeMethylationOutput = "Genome-wide methylation for " + BedFile + "\n" + str(MethylationLevel)
+	GenomeMethylationOutput = "Genome-wide methylation for " + BedFile + " = " + str(MethylationLevel) + "%\n"
 	GenomeMethylationOutfile = open(BedFile.replace(".bed",".MethSummary"),"wt")
 	GenomeMethylationOutfile.write(GenomeMethylationOutput)
 	GenomeMethylationOutfile.close()	
@@ -83,13 +88,16 @@ def MEtoBED(MEfile):
 
 ## function to take a bed file of methylation levels for cytosines and a gff feature file, and generate mean methylation levels for each feature
 def FeatureMeth(MethBed,GFF):
+	# remove path from input filenames (to allow adjusted versions to be written to working directory)
+	MethBedInput = MethBed.split("/")[-1]
+	GFFInput = GFF.split("/")[-1]
 	# sort bedfile and feature files
-	cmd = "bedtools sort -i " + MethBed + " > " + MethBed.replace(".bed",".sorted.bed")
+	cmd = "bedtools sort -i " + MethBed + " > " + MethBedInput.replace(".bed",".sorted.bed")
 	subprocess.call(cmd, shell=True)
-	cmd = "bedtools sort -i " + GFF + " > " + GFF.replace(".gff",".sorted.gff")
+	cmd = "bedtools sort -i " + GFF + " > " + GFFInput.replace(".gff",".sorted.gff")
 	subprocess.call(cmd, shell=True)
 	# generate methylation levels for each feature
-	cmd = "bedtools map -a " + GFF.replace(".gff",".sorted.gff") + " -b " + MethBed.replace(".bed",".sorted.bed") + " -c 5 -o mean > " + GFF.replace(".gff",".CG.bed")
+	cmd = "bedtools map -a " + GFFInput.replace(".gff",".sorted.gff") + " -b " + MethBedInput.replace(".bed",".sorted.bed") + " -c 5 -o mean > " + GFFInput.replace(".gff",".CG.bed")
 	subprocess.call(cmd, shell=True)
 	return()
 
@@ -100,6 +108,7 @@ def FeatureMeth(MethBed,GFF):
 # convert MethylExtract file to BED file
 InputBed = MEtoBED(MEfile=InputFile)
 
-# calculate mean methylation level for each feature in each feature file
-for i in FeatureFiles:
-	FeatureMeth(MethBed=InputBed,GFF=i)
+# if feature files have been specified, calculate mean methylation level for each feature in each feature file
+if FeatureFiles is not None:
+	for i in FeatureFiles:
+		FeatureMeth(MethBed=InputBed,GFF=i)
