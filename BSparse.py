@@ -99,6 +99,21 @@ def FeatureMeth(MethBed,GFF):
 	# generate methylation levels for each feature
 	cmd = "bedtools map -a " + GFFInput.replace(".gff",".sorted.gff") + " -b " + MethBedInput.replace(".bed",".sorted.bed") + " -c 5 -o mean > " + GFFInput.replace(".gff",".CG.bed")
 	subprocess.call(cmd, shell=True)
+	# read in methylation levels for each feature
+	FeatureMethLevels = []
+	for line in open(GFFInput.replace(".gff",".CG.bed")):
+		temp = line.split("\t")
+		if temp[-1] != ".\n":
+			FeatureMethLevels.append(float(temp[-1]))
+	# calculate mean methylation level over all features
+	TotalMeth=0
+	for i in FeatureMethLevels:
+		TotalMeth+=i
+	MeanMeth=TotalMeth/len(FeatureMethLevels)
+	# append mean methylation level for this feature file to summary file
+	OutFile = open(MethBedInput.replace(".bed",".MethSummary"),"a")
+	OutFile.write("Mean methylation for features in " + GFFInput + " = " + str(MeanMeth)+"%\n")
+	OutFile.close()			
 	return()
 
 ##################
