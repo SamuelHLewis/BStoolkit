@@ -96,15 +96,17 @@ def FeatureMeth(MethBed,GFF):
 	subprocess.call(cmd, shell=True)
 	cmd = "bedtools sort -i " + GFF + " > " + GFFInput.replace(".gff",".sorted.gff")
 	subprocess.call(cmd, shell=True)
-	# generate methylation levels for each feature
-	cmd = "bedtools map -a " + GFFInput.replace(".gff",".sorted.gff") + " -b " + MethBedInput.replace(".bed",".sorted.bed") + " -c 5 -o mean > " + GFFInput.replace(".gff",".CG.bed")
+	# generate mean methylation levels for each feature, and print the levels for each cytosine used to calculate mean
+	cmd = "bedtools map -a " + GFFInput.replace(".gff",".sorted.gff") + " -b " + MethBedInput.replace(".bed",".sorted.bed") + " -c 5 -o collapse,mean > " + GFFInput.replace(".gff",".CG.bed")
 	subprocess.call(cmd, shell=True)
-	# read in methylation levels for each feature
+	# read in methylation levels for each feature, keeping only those that have a mean calculated from >3 cytosines
 	FeatureMethLevels = []
 	for line in open(GFFInput.replace(".gff",".CG.bed")):
 		temp = line.split("\t")
 		if temp[-1] != ".\n":
-			FeatureMethLevels.append(float(temp[-1]))
+			# this keeps features with mean calculated from >3 cytosines
+			if len(temp[-2].split(","))>3:
+				FeatureMethLevels.append(float(temp[-1]))
 	# calculate mean methylation level over all features
 	TotalMeth=0
 	for i in FeatureMethLevels:
