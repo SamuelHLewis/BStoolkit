@@ -40,3 +40,19 @@ By default it runs on a single core, but it can be run on multiple cores using t
 ```bash
 BStrim.sh -c 24 -l LeftReads.fastq -r RightReads.fastq
 ```
+It requires [Trim Galore!](https://www.bioinformatics.babraham.ac.uk/projects/trim_galore/)
+## MEbatch
+This uses MethylExtract to estimate the methylation level at all cytosines on a **specific** chromosome/contig. Basic usage is:
+```bash
+MEbatch.sh -b MappedToAllChromosomes.bam -c Chromosome1 -g Genome.fasta
+```
+It requires [samtools](http://www.htslib.org/) and [MethylExtract](http://bioinfo2.ugr.es/MethylExtract/).
+
+Analysing chromosomes/contigs separately is particularly useful when analysing highly-fragmented genomes with large numbers of contigs, which can cause MethylExtract to crash if the entire bam file is analysed at once. In this case, MEbatch can be used to run MethylExtract on all contigs in batches with a command along the lines of:
+```bash
+# write the name of each contig in the bam file to a contig.names file
+samtools view -H MappedToAllChromosomes.bam | awk -F"\t" '/@SQ/{print $2}' |  cut -d":" -f2 > contig.names
+# run contigs in parallel
+cat contig.names | parallel "MEbatch.sh -b MappedToAllChromosomes.bam -c {} -g Genome.fasta"
+```
+This type of parallel usage requires [GNU parallel](https://www.gnu.org/software/parallel/).
