@@ -4,7 +4,7 @@
 Cores=1
 
 # command line option parsing
-while getopts ":c:l:r:b:h" opt; do
+while getopts ":c:g:l:r:b:h" opt; do
 	case $opt in
 		c)
 			if [ $OPTARG -le 1 ]
@@ -17,6 +17,11 @@ while getopts ":c:l:r:b:h" opt; do
 				printf "cores (-c): $OPTARG\n"
 				Cores=$OPTARG
 			fi
+			;;
+		g)
+			# set spike-in genome fasta file directory
+			printf "Directory containing genome of spike-in (-g): $OPTARG\n"
+			Genome=$OPTARG
 			;;
 		l)
 			# set lefthand read file
@@ -36,7 +41,7 @@ while getopts ":c:l:r:b:h" opt; do
 done
 
 # use Bismark to map reads to spike-in genome in non-directional mode
-bismark --multicore $Cores --non_directional --genome ~/DNAmeth/WGBS/Genomes/SpikeInGenome/ -1 $LeftReads -2 $RightReads
+bismark --multicore $Cores --non_directional --genome $Genome -1 $LeftReads -2 $RightReads
 # generate summary report
 bismark_methylation_extractor -p --gzip *_bismark_bt2_pe.bam
 # make a "SpikeIn" directory if it doesn't exist
