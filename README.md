@@ -27,3 +27,16 @@ By default it runs on a single core, but it can be run on multiple cores using t
 BSspike.sh -c 24 -g ~/Path/To/SpikeIn/Genome/ -l LeftReads.fastq -r RightReads.fastq
 ```
 It requires [Bismark](https://github.com/FelixKrueger/Bismark).
+## BStrim
+This trims bases from the 3' end of a set of paired-end bisulfite sequencing reads. The default number of bases to trim is 10. Basic usage is:
+```bash
+BStrim.sh -l LeftReads.fastq -r RightReads.fastq
+```
+A different number of reads to trim can be specified with the -b argument, for example to specify 20 bases:
+```bash
+BStrim.sh -b 20 -l LeftReads.fastq -r RightReads.fastq
+```
+By default it runs on a single core, but it can be run on multiple cores using the -c argument, for example:
+```bash
+BStrim.sh -c 24 -l LeftReads.fastq -r RightReads.fastq
+```
