@@ -17,4 +17,13 @@ It can also take one or more annotation files (in GFF format), and returns the m
 BSparse.py -i MethyExtract.output -f features1.gff,features2.gff
 ```
 It requires [bedtools](http://bedtools.readthedocs.io/en/latest/).
-
+## BSspike
+This maps paired-end bisulfite reads to the genome of a spike-in (e.g. known unmethylated DNA). Basic usage is:
+```bash
+BSspike.sh -g ~/Path/To/SpikeIn/Genome/ -l LeftReads.fastq -r RightReads.fastq
+```
+By default it runs on a single core, but it can be run on multiple cores using the -c argument, for example:
+```bash
+BSspike.sh -c 24 -g ~/Path/To/SpikeIn/Genome/ -l LeftReads.fastq -r RightReads.fastq
+```
+It requires [Bismark](https://github.com/FelixKrueger/Bismark).
