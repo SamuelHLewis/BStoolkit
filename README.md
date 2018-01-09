@@ -56,3 +56,8 @@ samtools view -H MappedToAllChromosomes.bam | awk -F"\t" '/@SQ/{print $2}' |  cu
 cat contig.names | parallel "MEbatch.sh -b MappedToAllChromosomes.bam -c {} -g Genome.fasta"
 ```
 This type of parallel usage requires [GNU parallel](https://www.gnu.org/software/parallel/).
+## UpstreamFinder
+This finds the coordinates of upstream regions for each gene in a genome, with reference to the first exon of each gene. It takes a GFF file and an integer length of upstream sequence as input, and outputs a GFF file of upstream sequencefeatures. Basic usage is:
+```bash
+UpstreamFinder.py -i Annotation.gff -l 1000
+```
