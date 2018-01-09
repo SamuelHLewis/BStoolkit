@@ -6,7 +6,6 @@ import subprocess
 import shutil
 import re
 import argparse
-from collections import OrderedDict
 
 ###########################
 ## USER ARGUMENT PARSING ##
@@ -24,9 +23,9 @@ else:
 	sys.exit(0)
 # upstream length parsing
 if str.isdigit(args.length):
-	UpstreamLength = int(args.length)
-	if UpstreamLength>0:
-		print("Upstream length = "+str(UpstreamLength))
+	Length = int(args.length)
+	if Length>0:
+		print("Upstream length = "+str(Length))
 	else:
 		print("ERROR: upstream length (-l) must be >0")
 else:
@@ -37,21 +36,43 @@ else:
 ## ACTUAL CODE ##
 #################
 # function to find start position of 1st exon for each gene - takes a GFF file, returns a dict of gene:start position pairs
-def Exon1Finder(GFF):
-	Genes = OrderedDict()
+def Exon1Finder(GFF,UpstreamLength):
+	Genes = []
+	Starts = []
+	Strands = []
 	for line in open(GFF,"r"):
 		if not line.startswith("#"):
 			temp = line.split("\t")
 			if temp[2] == "exon":
 				Strand = temp[6]
-				Start = temp[3]
+				if Strand == "+":
+					Start = temp[3]
+				elif Strand == "-":
+					Start = temp[4]
 				Name = temp[8].split(";")[1].replace("Parent=","")
 				if Name not in Genes:
-					Genes[Name] = Start
-	return(Genes)
+					Genes.append(Name)
+					Starts.append(Start)
+					Strands.append(Strand)
+	# calculate upstream region coordinates for each gene
+	UpstreamStarts = []
+	for i in range(len(Starts)):
+		if Strands[i] == "+":
+			UpstreamStarts.append(int(Starts[i])-UpstreamLength-1)
+		elif Strands[i] == "-":
+			UpstreamStarts.append(int(Starts[i])+1)
+	UpstreamEnds = []
+	for i in range(len(Starts)):
+		if Strands[i] == "+":
+			UpstreamEnds.append(int(Starts[i])-1)
+		elif Strands[i] == "-":
+			UpstreamEnds.append(int(Starts[i])+UpstreamLength+1)
+	# make list of lists
+	Combined = list(zip(Genes,UpstreamStarts,UpstreamEnds,Strands))
+	return(Combined)
 
 # final call
-result=Exon1Finder(GFF=InputFile)
+result=Exon1Finder(GFF=InputFile,UpstreamLength=Length)
 for i in result:
-	print(i + "\t" + result[i])
+	print(i[0] + "\t" + str(i[1]) + "\t" + str(i[2]) + "\t" + i[3])
 
