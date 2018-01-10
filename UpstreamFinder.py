@@ -51,12 +51,32 @@ def Exon1Finder(GFF,UpstreamLength):
 					Start = temp[3]
 				elif Strand == "-":
 					Start = temp[4]
-				Name = temp[8].split(";")[1].replace("Parent=","")
+				NameMatch = re.search("Parent\=[^\;]*",line)
+				Name = NameMatch.group().replace("Parent=","")
+				print("Currently on an exon for gene " + Name + " starting at " + str(Start))
+				# check whether an exon for this gene has been seen before
+				# if it hasn't been seen before, add all of its information to the lists
 				if Name not in Genes:
 					Chromosomes.append(Chromosome)
 					Genes.append(Name)
 					Starts.append(Start)
 					Strands.append(Strand)
+					print("First site of exon from gene " + Name)
+				# if it has been seen before, compare the start position of this exon to the last element in the Starts list (which will have come from another exon of this gene)
+				else:
+					# if the gene is on the + strand, replace the last element with this start position if the start position is lower (i.e. more 5' on the + strand)
+					# NB: this should never happen if the exon entries are in ascending numerical order, but keeping the check in here for now just in case
+					if Strand == "+":
+						if Start < Starts[-1]:
+							print("Have already seen exon from gene " + Name + ", but this exon has a more 5' start site (" + str(Start) + " vs " + str(Starts[-1]) + " on the + strand)")
+							del Starts[-1]
+							Starts.append(Start)
+					# if the gene is on the - strand, replace the last element with this start position if the start position is higher (i.e. more 5' on the - strand)
+					if Strand == "-":
+						if Start > Starts[-1]:
+							print("Have already seen exon from gene " + Name + ", but this exon has a more 5' start site (" + str(Start) + " vs " + str(Starts[-1]) + " on the - strand)")
+							del Starts[-1]
+							Starts.append(Start)
 	# calculate upstream region coordinates for each gene
 	UpstreamStarts = []
 	for i in range(len(Starts)):
