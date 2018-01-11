@@ -56,7 +56,8 @@ def Exon1Finder(GFF,UpstreamLength):
 				NameMatch = re.search("Parent\=[^\;]*",line)
 				Name = NameMatch.group().replace("Parent=","")
 				# add gene name to list
-				Genes.append(Name)
+				if Name not in Genes:
+					Genes.append(Name)
 				# add Chromosome name to dict if it isn't there already
 				if Name not in Chromosomes:
 					Chromosomes[Name] = Chromosome
