@@ -61,3 +61,9 @@ This finds the coordinates of upstream regions for each gene in a genome, with r
 ```bash
 UpstreamFinder.py -i Annotation.gff -l 1000
 ```
+## CountConcat
+This takes an annotation file, a methylation levels file (as produced from BSparse), a bam file of mapped RNA-Seq reads, a bam file of mapped siRNAs, and a bam file of mapped piRNAs. It counts the number of RNA-Seq reads, siRNAs and piRNAs mapping to each feature in the annotation file, and concatenates these counts together with the methylation levels into a final "Concatenated.counts" file. Example usage is:
+```bash
+CountConcat.sh -a Annotations.gff -m MethylationLevels.gff -r RNASeq.bam -p piRNA.bam -s siRNA.bam
+```
+
