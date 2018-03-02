@@ -67,11 +67,13 @@ def MEtoBED(MEfile):
 	BedOutput = ""
 	for i in BedFormatLines:
 		BedOutput += i + "\n"
-	BedOutfile = open(MEfile.replace(".output",".bed"),"wt")
+	# output bed file to current working dir, but keep file name
+	BedOutfileName = MEfile.split("/")[-1].replace(".output",".bed")
+	BedOutfile = open(BedOutfileName,"wt")
 	BedOutfile.write(BedOutput)
 	BedOutfile.close()
-	print("Bed file written to "+MEfile.replace(".output",".bed"))
-	return(MEfile.replace(".output",".bed"))
+	print("Bed file written to "+BedOutfileName)
+	return(BedOutfileName)
 
 ## function to take a bed file of methylation levels for cytosines and a gff feature file, and generate mean methylation levels for each feature
 def FeatureMeth(MethBed,GFF):
@@ -87,7 +89,8 @@ def FeatureMeth(MethBed,GFF):
 	cmd = "bedtools map -a " + GFFInput.replace(".gff",".sorted.gff") + " -b " + MethBedInput.replace(".bed",".sorted.bed") + " -c 5 -o collapse,mean > " + GFFInput.replace(".gff",".CG.bed")
 	subprocess.call(cmd, shell=True)
 	# remove intermediate files
-	# to be added after input file name test complete
+	os.remove(MethBedInput.replace(".bed",".sorted.bed"))
+	os.remove(GFFInput.replace(".gff",".sorted.gff"))
 	return()
 
 ##################
@@ -97,7 +100,9 @@ def FeatureMeth(MethBed,GFF):
 # convert MethylExtract file to BED file
 InputBed = MEtoBED(MEfile=InputFile)
 
-# if feature files have been specified, calculate mean methylation level for each feature in each feature file
+# if feature files have been specified, calculate mean methylation level for each feature in each feature file, and delete whole-genome bed file
 if FeatureFiles is not None:
 	for i in FeatureFiles:
 		FeatureMeth(MethBed=InputBed,GFF=i)
+	os.remove(InputBed)
+
