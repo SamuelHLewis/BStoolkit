@@ -23,7 +23,7 @@ args = parser.parse_args()
 # input fasta file parsing
 InputFile = args.infile
 if InputFile is not None:
-	print('Input file is ' + InputFile)
+	print('Input file = ' + InputFile)
 else:
 	print('ERROR: no input file specified')
 # feature file parsing
@@ -72,7 +72,6 @@ def MEtoBED(MEfile):
 	BedOutfile = open(BedOutfileName,"wt")
 	BedOutfile.write(BedOutput)
 	BedOutfile.close()
-	print("Bed file written to "+BedOutfileName)
 	return(BedOutfileName)
 
 ## function to take a bed file of methylation levels for cytosines and a gff feature file, and generate mean methylation levels for each feature
@@ -91,6 +90,7 @@ def FeatureMeth(MethBed,GFF):
 	# remove intermediate files
 	os.remove(MethBedInput.replace(".bed",".sorted.bed"))
 	os.remove(GFFInput.replace(".gff",".sorted.gff"))
+	print("Methylation levels for " + GFFInput + " written to " + GFFInput.replace(".gff",".CG.bed"))
 	return()
 
 ##################
