@@ -38,7 +38,7 @@ if args.featurefiles is not None:
 
 ## function to take a line from a MethyExtract output file, and return a bed-formatted line with % methylation on both strands
 def MEconverter(line):
-	Line = line.split("\t")
+	Line = line.split()
 	Chromosome = Line[0]
 	Start = str(int(Line[1])-1)
 	End = str(int(Line[1])+1)
@@ -71,19 +71,6 @@ def MEtoBED(MEfile):
 	BedOutfile.write(BedOutput)
 	BedOutfile.close()
 	print("Bed file written to "+MEfile.replace(".output",".bed"))
-	# calculate genome-wide methylation level
-	BedFile = MEfile.replace(".output",".bed")
-	Ccount = 0
-	MethylationTotal = 0
-	for i in BedFormatLines:
-		Ccount += 1
-		MethylationTotal += float(i.split("\t")[4])
-	MethylationLevel = MethylationTotal/Ccount
-	print("Genome-wide methylation level for " + BedFile + "= " + str(MethylationLevel) + "%")
-	GenomeMethylationOutput = "Genome-wide methylation for " + BedFile + " = " + str(MethylationLevel) + "%\n"
-	GenomeMethylationOutfile = open(BedFile.replace(".bed",".MethSummary"),"wt")
-	GenomeMethylationOutfile.write(GenomeMethylationOutput)
-	GenomeMethylationOutfile.close()	
 	return(MEfile.replace(".output",".bed"))
 
 ## function to take a bed file of methylation levels for cytosines and a gff feature file, and generate mean methylation levels for each feature
@@ -99,23 +86,8 @@ def FeatureMeth(MethBed,GFF):
 	# generate mean methylation levels for each feature, and print the levels for each cytosine used to calculate mean
 	cmd = "bedtools map -a " + GFFInput.replace(".gff",".sorted.gff") + " -b " + MethBedInput.replace(".bed",".sorted.bed") + " -c 5 -o collapse,mean > " + GFFInput.replace(".gff",".CG.bed")
 	subprocess.call(cmd, shell=True)
-	# read in methylation levels for each feature, keeping only those that have a mean calculated from >3 cytosines
-	FeatureMethLevels = []
-	for line in open(GFFInput.replace(".gff",".CG.bed")):
-		temp = line.split("\t")
-		if temp[-1] != ".\n":
-			# this keeps features with mean calculated from >3 cytosines
-			if len(temp[-2].split(","))>3:
-				FeatureMethLevels.append(float(temp[-1]))
-	# calculate mean methylation level over all features
-	TotalMeth=0
-	for i in FeatureMethLevels:
-		TotalMeth+=i
-	MeanMeth=TotalMeth/len(FeatureMethLevels)
-	# append mean methylation level for this feature file to summary file
-	OutFile = open(MethBedInput.replace(".bed",".MethSummary"),"a")
-	OutFile.write("Mean methylation for features in " + GFFInput + " = " + str(MeanMeth)+"%\n")
-	OutFile.close()			
+	# remove intermediate files
+	# to be added after input file name test complete
 	return()
 
 ##################
