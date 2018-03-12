@@ -40,14 +40,15 @@ while getopts ":c:g:l:r:b:h" opt; do
 	esac
 done
 
-# use Bismark to map reads to spike-in genome in non-directional mode
-bismark --multicore $Cores --un --non_directional --genome $Genome -1 $LeftReads -2 $RightReads
-# generate summary report
-bismark_methylation_extractor -p --gzip *_bismark_bt2_pe.bam
-# make a "SpikeIn" directory if it doesn't exist
-if [ ! -d SpikeIn ]; then
-	mkdir SpikeIn;
+# delete the "SpikeIn" directory if it already exists
+if [ -d SpikeIn ]; then
+        rm -r SpikeIn;
 fi
-# move the Bismark files to the SpikeIn directory
-mv *bismark* ./SpikeIn
+# make a "SpikeIn" directory and move into it
+mkdir SpikeIn
+cd SpikeIn
+# use Bismark to map reads to spike-in genome in non-directional mode
+bismark --multicore $Cores --un --non_directional --genome $Genome -1 ../$LeftReads -2 ../$RightReads
+# generate summary report
+bismark_methylation_extractor -p --gzip ../*_bismark_bt2_pe.bam
 
