@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-from os import system,remove
+import os
+from os import system, listdir, remove
 import sys
 import subprocess
 import shutil
@@ -111,33 +112,33 @@ def Feature_Meth(meth_bed,GFF):
 	remove(meth_bed_input.replace(".bed",".sorted.bed"))
 	remove(GFF_input.replace(".gff",".sorted.gff"))
 	print("Methylation levels for " + GFF_input + " written to " + GFF_input.replace(".gff",".CG.bed"))
-	return()
+	return(GFF_input.replace(".gff",".CG.bed"))
 
 
 #################
 ## ACTUAL CODE ##
 #################
-## convert MethylExtract file to BED file
-#input_bed = ME_to_BED(ME_file=methylation_file)
+# convert MethylExtract file to BED file
+input_bed = ME_to_BED(ME_file=methylation_file)
 
-## calculate mean methylation level for each feature in annotation file, and delete whole-genome bed file
-#Feature_Meth(meth_bed=input_bed,GFF=annotation_file)
-#remove(input_bed)
+# calculate mean methylation level for each feature in annotation file, and delete whole-genome bed file
+meth_levels = Feature_Meth(meth_bed=input_bed,GFF=annotation_file)
+remove(input_bed)
 
 # count RNAseq
 print("Counting RNAseq reads")
-#system("bedtools coverage -s -counts -a " + annotation_file + " -b " + RNAseq_file + " > RNA.count")
+system("bedtools coverage -s -counts -a " + annotation_file + " -b " + RNAseq_file + " > RNA.count")
 
 # count siRNA
 print("Counting siRNAs")
-#system("bedtools coverage -s -counts -a " + annotation_file + " -b " + siRNA_file + " > siRNA.count")
+system("bedtools coverage -s -counts -a " + annotation_file + " -b " + siRNA_file + " > siRNA.count")
 
 # count piRNA
 print("Counting piRNAs")
-#system("bedtools coverage -s -counts -a " + annotation_file + " -b " + piRNA_file + " > piRNA.count")
+system("bedtools coverage -s -counts -a " + annotation_file + " -b " + piRNA_file + " > piRNA.count")
 
 # read in methylation, RNAseq, siRNA & piRNA counts
-meth_counts = pd.read_table("Exons.CG.bed", header = None) 
+meth_counts = pd.read_table(meth_levels, header = None) 
 RNA_counts = pd.read_table("RNA.count", header = None) 
 siRNA_counts = pd.read_table("siRNA.count", header = None) 
 piRNA_counts = pd.read_table("piRNA.count", header = None)
@@ -149,4 +150,12 @@ combined_data.to_csv("Concatenated.counts", sep = "\t")
 print("Combined output written to Concatenated.counts")
 
 # remove intermediate files
-
+cwd = os.getcwd()
+directory_contents = listdir(cwd)
+for entry in directory_contents:
+	if entry.endswith(".count"):
+		remove(os.path.join(cwd, entry))
+	elif entry.endswith(".sorted.bed"):
+		remove(os.path.join(cwd, entry))
+	elif entry.endswith(".sorted.gff"):
+		remove(os.path.join(cwd, entry))
