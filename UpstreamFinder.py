@@ -76,15 +76,15 @@ def Exon1Finder(GFF,UpstreamLength):
 	UpstreamStarts = {}
 	for i in Genes:
 		if Strands[i] == "+":
-			UpstreamStarts[i]=ExonStarts[i][0]-UpstreamLength-1
+			UpstreamStarts[i]=ExonStarts[i][0]-UpstreamLength
 		elif Strands[i] == "-":
-			UpstreamStarts[i]=ExonStarts[i][-1]+1
+			UpstreamStarts[i]=ExonStarts[i][-1]
 	UpstreamEnds = {}
 	for i in Genes:
 		if Strands[i] == "+":
-			UpstreamEnds[i]=ExonStarts[i][0]-1
+			UpstreamEnds[i]=ExonStarts[i][0]
 		elif Strands[i] == "-":
-			UpstreamEnds[i]=ExonStarts[i][-1]+UpstreamLength+1
+			UpstreamEnds[i]=ExonStarts[i][-1]+UpstreamLength
 	# make lists from dicts, preserving original gene input order
 	ChromosomesList = []
 	StrandsList = []
