@@ -7,16 +7,6 @@ This takes two paired bisulfite sequencing read files, and runs FastQC on them. 
 BSQC.sh -l LeftReads.fastq -r RightReads.fastq
 ```
 It requires [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/).
-## BSparse
-This takes an output file from MethylExtract, and writes a bed file of methylation levels at each cytosine. Basic usage is:
-```bash
-BSparse.py -i MethyExtract.output
-``` 
-It can also take one or more annotation files (in GFF format), and returns the mean methylation level for each feature. This is done by using with -f argument with one or more filenames, for example:
-```bash
-BSparse.py -i MethyExtract.output -f features1.gff,features2.gff
-```
-It requires [bedtools](http://bedtools.readthedocs.io/en/latest/).
 ## BSspike
 This maps paired-end bisulfite reads to the genome of a spike-in (e.g. known unmethylated DNA). Basic usage is:
 ```bash
@@ -62,8 +52,10 @@ This finds the coordinates of upstream regions for each gene in a genome, with r
 UpstreamFinder.py -i Annotation.gff -l 1000
 ```
 ## CountConcat
-This takes an annotation file, a methylation levels file (as produced from BSparse), a bam file of mapped RNA-Seq reads, a bam file of mapped siRNAs, and a bam file of mapped piRNAs. It counts the number of RNA-Seq reads, siRNAs and piRNAs mapping to each feature in the annotation file, and concatenates these counts together with the methylation levels into a final "Concatenated.counts" file. Example usage is:
+This takes an annotation file, a methylation levels file (a .output file from MethylExtract), a bam file of mapped RNA-Seq reads, a bam file of mapped siRNAs, and a bam file of mapped piRNAs. It counts the number of RNA-Seq reads, siRNAs and piRNAs mapping to each feature in the annotation file, and concatenates these counts together with the methylation levels into a final "Concatenated.counts" file. Example usage is:
 ```bash
-CountConcat.sh -a Annotations.gff -m MethylationLevels.gff -r RNASeq.bam -p piRNA.bam -s siRNA.bam
+CountConcat.py -a Annotations.gff -m MethylationLevels.output -r RNASeq.bam -p piRNA.bam -s siRNA.bam
 ```
+It requires [bedtools](http://bedtools.readthedocs.io/en/latest/).
+
 
