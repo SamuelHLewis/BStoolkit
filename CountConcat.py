@@ -10,6 +10,13 @@ import argparse
 import pandas as pd
 import numpy as np
 
+#######################
+## DEFAULT ARGUMENTS ##
+#######################
+RNAseq_file = False
+piRNA_file = False
+siRNA_file = False
+
 ###########################
 ## USER ARGUMENT PARSING ##
 ###########################
@@ -35,26 +42,23 @@ else:
 	print("ERROR: no methylation file (-m) specified")
 	sys.exit(0)
 # RNAseq file parsing
-RNAseq_file = args.RNAseq
-if RNAseq_file is not None:
+if args.RNAseq is not None:
+	RNAseq_file = args.RNAseq
 	print("RNAseq file is " + RNAseq_file)
 else:
-	print("ERROR: no RNAseq file (-r) specified")
-	sys.exit(0)
+	print("No RNAseq file (-r) specified, so RNAseq read count will not be generated")
 # piRNA file parsing
-piRNA_file = args.piRNA
-if piRNA_file is not None:
+if args.piRNA is not None:
+	piRNA_file = args.piRNA
 	print("piRNA file is " + piRNA_file)
 else:
-	print("ERROR: no piRNA file (-p) specified")
-	sys.exit(0)
+	print("No piRNA file (-p) specified, so piRNA count will not be generated")
 # siRNA file parsing
-siRNA_file = args.siRNA
-if siRNA_file is not None:
+if args.siRNA is not None:
+	siRNA_file = args.siRNA
 	print("siRNA file is " + siRNA_file)
 else:
-	print("ERROR: no siRNA file (-s) specified")
-	sys.exit(0)
+	print("No siRNA file (-s) specified, so siRNA count will not be generated")
 
 ##########################
 ## FUNCTION DEFINITIONS ##
@@ -124,29 +128,36 @@ input_bed = ME_to_BED(ME_file=methylation_file)
 # calculate mean methylation level for each feature in annotation file, and delete whole-genome bed file
 meth_levels = Feature_Meth(meth_bed=input_bed,GFF=annotation_file)
 remove(input_bed)
+# read in methylation levels
+meth_counts = pd.read_table(meth_levels, header = None)
 
-# count RNAseq
-print("Counting RNAseq reads")
-system("bedtools coverage -s -counts -a " + annotation_file + " -b " + RNAseq_file + " > RNA.count")
+# if RNAseq file has been specified, count and read in RNAseq reads
+if RNAseq_file != False:
+	print("Counting RNAseq reads")
+	system("bedtools coverage -s -counts -a " + annotation_file + " -b " + RNAseq_file + " > RNA.count")
+	RNA_counts = pd.read_table("RNA.count", header = None)
 
-# count siRNA
-print("Counting siRNAs")
-system("bedtools coverage -s -counts -a " + annotation_file + " -b " + siRNA_file + " > siRNA.count")
+# if siRNA file has been specified, count and read in siRNAs
+if siRNA_file != False:
+	print("Counting siRNAs")
+	system("bedtools coverage -s -counts -a " + annotation_file + " -b " + siRNA_file + " > siRNA.count")
+	siRNA_counts = pd.read_table("siRNA.count", header = None)
 
-# count piRNA
-print("Counting piRNAs")
-system("bedtools coverage -s -counts -a " + annotation_file + " -b " + piRNA_file + " > piRNA.count")
+# if piRNA file has been specified, count and read in piRNAs
+if piRNA_file != False:
+	print("Counting piRNAs")
+	system("bedtools coverage -s -counts -a " + annotation_file + " -b " + piRNA_file + " > piRNA.count")
+	piRNA_counts = pd.read_table("piRNA.count", header = None)
 
-# read in methylation, RNAseq, siRNA & piRNA counts
-meth_counts = pd.read_table(meth_levels, header = None) 
-RNA_counts = pd.read_table("RNA.count", header = None) 
-siRNA_counts = pd.read_table("siRNA.count", header = None) 
-piRNA_counts = pd.read_table("piRNA.count", header = None)
-# paste RNAseq, siRNA & piRNA counts onto methylation levels to create output file
-combined_data = pd.concat([meth_counts, RNA_counts.iloc[:,-1], siRNA_counts.iloc[:,-1], piRNA_counts.iloc[:,-1]], axis = 1)
-combined_data.columns = ["Chromosome", "Program", "Feature", "Start", "End", "INTENTIONALLYBLANK", "Strand", "INTENTIONALLYBLANK", "Name", "IndividualCytosineMethylation", "MeanMethylation", "RNAseq", "siRNA", "piRNA"]
+# depending on which bam files have been specified, paste counts onto methylation levels and add headeri
+if RNAseq_file == False and siRNA_file == False and piRNA_file == False:
+	combined_data = pd.concat([meth_counts], axis = 1)
+	combined_data.columns = ["Chromosome", "Program", "Feature", "Start", "End", "INTENTIONALLYBLANK", "Strand", "INTENTIONALLYBLANK", "Name", "IndividualCytosineMethylation", "MeanMethylation"]
+else:
+	combined_data = pd.concat([meth_counts, RNA_counts.iloc[:,-1], siRNA_counts.iloc[:,-1], piRNA_counts.iloc[:,-1]], axis = 1)
+	combined_data.columns = ["Chromosome", "Program", "Feature", "Start", "End", "INTENTIONALLYBLANK", "Strand", "INTENTIONALLYBLANK", "Name", "IndividualCytosineMethylation", "MeanMethylation", "RNAseq", "siRNA", "piRNA"]
 # output to file
-combined_data.to_csv("Concatenated.counts", sep = "\t")
+combined_data.to_csv("Concatenated.counts", sep = "\t", index = False)
 print("Combined output written to Concatenated.counts")
 
 # remove intermediate files
