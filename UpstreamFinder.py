@@ -45,7 +45,7 @@ def Exon1Finder(GFF,UpstreamLength):
 	for line in open(GFF,"r"):
 		if not line.startswith("#"):
 			temp = line.split("\t")
-			if temp[2] == "exon":
+			if temp[2] == "CDS":
 				# extract data from GFF fields
 				Chromosome = temp[0]
 				Strand = temp[6]
