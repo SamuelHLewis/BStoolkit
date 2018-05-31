@@ -140,22 +140,25 @@ if RNAseq_file != False:
 # if siRNA file has been specified, count and read in siRNAs
 if siRNA_file != False:
 	print("Counting siRNAs")
-	system("bedtools coverage -s -counts -a " + annotation_file + " -b " + siRNA_file + " > siRNA.count")
+	system("bedtools coverage -counts -a " + annotation_file + " -b " + siRNA_file + " > siRNA.count")
 	siRNA_counts = pd.read_table("siRNA.count", header = None)
 
 # if piRNA file has been specified, count and read in piRNAs
 if piRNA_file != False:
 	print("Counting piRNAs")
-	system("bedtools coverage -s -counts -a " + annotation_file + " -b " + piRNA_file + " > piRNA.count")
+	system("bedtools coverage -counts -a " + annotation_file + " -b " + piRNA_file + " > piRNA.count")
 	piRNA_counts = pd.read_table("piRNA.count", header = None)
 
-# depending on which bam files have been specified, paste counts onto methylation levels and add headeri
-if RNAseq_file == False and siRNA_file == False and piRNA_file == False:
-	combined_data = pd.concat([meth_counts], axis = 1)
-	combined_data.columns = ["Chromosome", "Program", "Feature", "Start", "End", "INTENTIONALLYBLANK", "Strand", "INTENTIONALLYBLANK", "Name", "IndividualCytosineMethylation", "MeanMethylation"]
-else:
-	combined_data = pd.concat([meth_counts, RNA_counts.iloc[:,-1], siRNA_counts.iloc[:,-1], piRNA_counts.iloc[:,-1]], axis = 1)
-	combined_data.columns = ["Chromosome", "Program", "Feature", "Start", "End", "INTENTIONALLYBLANK", "Strand", "INTENTIONALLYBLANK", "Name", "IndividualCytosineMethylation", "MeanMethylation", "RNAseq", "siRNA", "piRNA"]
+# depending on which bam files have been specified, paste counts onto methylation levels and add header
+combined_data = pd.concat([meth_counts], axis = 1)
+combined_data.columns = ["Chromosome", "Program", "Feature", "Start", "End", "INTENTIONALLYBLANK", "Strand", "INTENTIONALLYBLANK", "Name", "IndividualCytosineMethylation", "MeanMethylation"]
+if RNAseq_file != False:
+	combined_data["RNASeq"] = RNA_counts.iloc[:,-1]
+if siRNA_file != False:
+	combined_data["siRNA"] = siRNA_counts.iloc[:,-1]
+if piRNA_file != False:
+	combined_data["piRNA"] = piRNA_counts.iloc[:,-1]
+
 # output to file
 combined_data.to_csv("Concatenated.counts", sep = "\t", index = False)
 print("Combined output written to Concatenated.counts")
