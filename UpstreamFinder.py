@@ -115,7 +115,7 @@ def Exon1Finder(GFF,UpstreamLength):
 result=Exon1Finder(GFF=InputFile,UpstreamLength=Length)
 OutputString = ""
 for i in result:
-	OutputString += i[0] + "\tUpstreamFinder\tUpstreamRegion\t" + str(i[1]) + "\t" + str(i[2]) + "\t.\t" + i[3] + "\t.\tID=" + i[4]  + "\n"
+	OutputString += i[0] + "\tUpstreamFinder\tUpstreamRegion\t" + str(i[1]) + "\t" + str(i[2]) + "\t.\t" + i[3] + "\t.\tID=" + i[4].rstrip("\n") + "\n"
 outfile = open("Upstream.gff","wt")
 outfile.write(OutputString)
 outfile.close()
