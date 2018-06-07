@@ -9,6 +9,7 @@ import re
 import argparse
 import pandas as pd
 import numpy as np
+from Bio import SeqIO
 
 #######################
 ## DEFAULT ARGUMENTS ##
@@ -16,6 +17,7 @@ import numpy as np
 RNAseq_file = False
 piRNA_file = False
 siRNA_file = False
+fasta_file = False
 
 ###########################
 ## USER ARGUMENT PARSING ##
@@ -26,6 +28,7 @@ parser.add_argument('-m', '--methylation', type=str, help='Methylation levels fi
 parser.add_argument('-r', '--RNAseq', type=str, help='RNAseq alignment file (bam format)')
 parser.add_argument('-p', '--piRNA', type=str, help='piRNA alignment file (bam format)')
 parser.add_argument('-s', '--siRNA', type=str, help='siRNA alignment file (bam format)')
+parser.add_argument('-f', '--fasta', type=str, help='genome sequence file (fasta format)')
 args = parser.parse_args()
 # annotation file parsing
 annotation_file = args.annotation
@@ -59,6 +62,12 @@ if args.siRNA is not None:
 	print("siRNA file is " + siRNA_file)
 else:
 	print("No siRNA file (-s) specified, so siRNA count will not be generated")
+# fasta file parsing
+if args.fasta is not None:
+	fasta_file = args.fasta
+	print("fasta file is " + fasta_file)
+else:
+	print("No fasta file (-f) specified, so CpG % will not be generated")
 
 ##########################
 ## FUNCTION DEFINITIONS ##
@@ -118,6 +127,25 @@ def Feature_Meth(meth_bed,GFF):
 	print("Methylation levels for " + GFF_input + " written to " + GFF_input.replace(".gff",".CG.bed"))
 	return(GFF_input.replace(".gff",".CG.bed"))
 
+# function to calculate CpG content within each feature of an annotation file
+def CpG_content(annotation, fasta):
+	# extract the sequences for the features of interest
+	cmd = "bedtools getfasta -s -fi " + fasta + " -bed " + annotation + " -fo temp.fasta"
+	subprocess.call(cmd,shell=True)
+	# for each feature, calculate the total and % CpG content
+	CpG_totals = []
+	CpG_percentages = []
+	for record in SeqIO.parse("temp.fasta", "fasta"):
+		print(record.id)
+		print(record.seq)
+		CpG_total = str(len(re.findall("CG", str(record.seq))))
+		CpG_totals.append(CpG_total)
+		print(CpG_total)
+		CpG_percentage = str((len(re.findall("CG", str(record.seq))))/(len(str(record.seq))/2)*100)
+		CpG_percentages.append(CpG_percentage)
+		print(CpG_percentage)
+	print(CpG_percentages)
+	return(CpG_percentages)
 
 #################
 ## ACTUAL CODE ##
@@ -130,6 +158,14 @@ meth_levels = Feature_Meth(meth_bed=input_bed,GFF=annotation_file)
 remove(input_bed)
 # read in methylation levels
 meth_counts = pd.read_table(meth_levels, header = None)
+
+# if fasta file has been specified, calculate CpG % in each feature
+if fasta_file != False:
+	# before running, check whether the fasta index exists, and delete it if so (if the index exists but is older than the fasta file, any changes to the fasta file will break the program, so the index needs to be made afresh)
+	if os.path.isfile(fasta_file + ".fai") is True:
+		os.remove(fasta_file + ".fai")
+	print("Calculating CpG %")
+	CpG_percentage = CpG_content(annotation = annotation_file, fasta = fasta_file)
 
 # if RNAseq file has been specified, count and read in RNAseq reads
 if RNAseq_file != False:
@@ -152,6 +188,8 @@ if piRNA_file != False:
 # depending on which bam files have been specified, paste counts onto methylation levels and add header
 combined_data = pd.concat([meth_counts], axis = 1)
 combined_data.columns = ["Chromosome", "Program", "Feature", "Start", "End", "INTENTIONALLYBLANK", "Strand", "INTENTIONALLYBLANK", "Name", "IndividualCytosineMethylation", "MeanMethylation"]
+if fasta_file != False:
+	combined_data["CpG (%)"] = CpG_percentage
 if RNAseq_file != False:
 	combined_data["RNASeq"] = RNA_counts.iloc[:,-1]
 if siRNA_file != False:
@@ -173,3 +211,6 @@ for entry in directory_contents:
 		remove(os.path.join(cwd, entry))
 	elif entry.endswith(".sorted.gff"):
 		remove(os.path.join(cwd, entry))
+#	elif entry == os.path.join(cwd,"temp.fasta"):
+#		remove(os.path.join(cwd,"temp.fasta"))
+
