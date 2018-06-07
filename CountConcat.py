@@ -136,15 +136,10 @@ def CpG_content(annotation, fasta):
 	CpG_totals = []
 	CpG_percentages = []
 	for record in SeqIO.parse("temp.fasta", "fasta"):
-		print(record.id)
-		print(record.seq)
 		CpG_total = str(len(re.findall("CG", str(record.seq))))
 		CpG_totals.append(CpG_total)
-		print(CpG_total)
 		CpG_percentage = str((len(re.findall("CG", str(record.seq))))/(len(str(record.seq))/2)*100)
 		CpG_percentages.append(CpG_percentage)
-		print(CpG_percentage)
-	print(CpG_percentages)
 	return(CpG_percentages)
 
 #################
@@ -211,6 +206,6 @@ for entry in directory_contents:
 		remove(os.path.join(cwd, entry))
 	elif entry.endswith(".sorted.gff"):
 		remove(os.path.join(cwd, entry))
-#	elif entry == os.path.join(cwd,"temp.fasta"):
-#		remove(os.path.join(cwd,"temp.fasta"))
+	elif entry == os.path.join(cwd,"temp.fasta"):
+		remove(os.path.join(cwd,"temp.fasta"))
 
