@@ -6,20 +6,29 @@ import subprocess
 import shutil
 import re
 import argparse
+from Bio import SeqIO
 
 ###########################
 ## USER ARGUMENT PARSING ##
 ###########################
 parser = argparse.ArgumentParser(description='Read arguments')
-parser.add_argument('-i', '--infile', type=str, help='Input CDS annotation file (gff format)')
-parser.add_argument('-l', '--length', type=str, help='Length of upstream sequence to annotate upstream')
+parser.add_argument('-a', '--annotation', type=str, help='Input CDS annotation file (gff format)')
+parser.add_argument('-f', '--fasta', type=str, help='Input genome sequence file (fasta format)')
+parser.add_argument('-l', '--length', type=str, help='Length of upstream sequence to annotate')
 args = parser.parse_args()
-# input fasta file parsing
-InputFile = args.infile
-if InputFile is not None:
-	print("Input file is " + InputFile)
+# input annotation file parsing
+InputAnnotation = args.annotation
+if InputAnnotation is not None:
+	print("Input annotation file is " + InputAnnotation)
 else:
-	print("ERROR: no input file specified")
+	print("ERROR: no input annotation file (-a) specified")
+	sys.exit(0)
+# input fasta file parsing
+InputFasta = args.fasta
+if InputFasta is not None:
+	print("Input genome file is " + InputFasta)
+else:
+	print("ERROR: no input genome file (-f) specified")
 	sys.exit(0)
 # upstream length parsing
 if str.isdigit(args.length):
@@ -36,7 +45,7 @@ else:
 ## ACTUAL CODE ##
 #################
 # function to find start position of 1st exon for each gene - takes a GFF file, returns a dict of gene:start position pairs
-def Exon1Finder(GFF,UpstreamLength):
+def UpstreamFinder(GFF, Fasta, UpstreamLength):
 	Genes = []
 	Chromosomes = {}
 	ExonStarts = {}
@@ -95,10 +104,18 @@ def Exon1Finder(GFF,UpstreamLength):
 		StrandsList.append(Strands[i])
 		UpstreamStartsList.append(UpstreamStarts[i])
 		UpstreamEndsList.append(UpstreamEnds[i])
-	# clean up all lists, removing entries where the upstream start coordinate is <1
+	# go through genome fasta file, recording the length for each chromosome
+	ChromosomeLengths = {}
+	for record in SeqIO.parse(Fasta, "fasta"):
+		ChromosomeLengths[record.id] = len(str(record.seq))
+	# clean up all lists	
 	ToDelete = []
 	for i in range(len(Genes)):
+		# remove entries where upstream start coordinate is < 1
 		if UpstreamStarts[Genes[i]]<1:
+			ToDelete.append(i)
+		# remove entries where upstream end coordinate is > chromosome length
+		elif UpstreamEnds[Genes[i]]>ChromosomeLengths[ChromosomesList[i]]:
 			ToDelete.append(i)
 	# NB: deleting elements from lists in reverse order to preserve element numbering until it doesn't matter
 	for i in reversed(ToDelete):
@@ -112,7 +129,7 @@ def Exon1Finder(GFF,UpstreamLength):
 	return(Combined)
 
 # final call
-result=Exon1Finder(GFF=InputFile,UpstreamLength=Length)
+result=UpstreamFinder(GFF = InputAnnotation, Fasta = InputFasta, UpstreamLength=Length)
 OutputString = ""
 for i in result:
 	OutputString += i[0] + "\tUpstreamFinder\tUpstreamRegion\t" + str(i[1]) + "\t" + str(i[2]) + "\t.\t" + i[3] + "\t.\tID=" + i[4].rstrip("\n") + "\n"
