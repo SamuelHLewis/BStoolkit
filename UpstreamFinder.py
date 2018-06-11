@@ -14,7 +14,8 @@ from Bio import SeqIO
 parser = argparse.ArgumentParser(description='Read arguments')
 parser.add_argument('-a', '--annotation', type=str, help='Input CDS annotation file (gff format)')
 parser.add_argument('-f', '--fasta', type=str, help='Input genome sequence file (fasta format)')
-parser.add_argument('-l', '--length', type=str, help='Length of upstream sequence to annotate')
+parser.add_argument('-u', '--upstreamlength', type=str, help='Length of upstream sequence to annotate')
+parser.add_argument('-l', '--label', type=str, help='Label of field in GFF file that contains the gene name')
 args = parser.parse_args()
 # input annotation file parsing
 InputAnnotation = args.annotation
@@ -31,21 +32,28 @@ else:
 	print("ERROR: no input genome file (-f) specified")
 	sys.exit(0)
 # upstream length parsing
-if str.isdigit(args.length):
-	Length = int(args.length)
+if str.isdigit(args.upstreamlength):
+	Length = int(args.upstreamlength)
 	if Length>0:
 		print("Upstream length = "+str(Length))
 	else:
-		print("ERROR: upstream length (-l) must be >0")
+		print("ERROR: upstream length (-u) must be >0")
 else:
-	print("ERROR: upstream length (-l) not specified as an integer")
+	print("ERROR: upstream length (-u) not specified as an integer")
+	sys.exit(0)
+# gene name label parsing
+GeneLabel = args.label
+if GeneLabel is not None:
+	print("Label used for finding gene name in GFF fields = " + GeneLabel)
+else:
+	print("ERROR: no gene name field label (-l) specified")
 	sys.exit(0)
 
 #################
 ## ACTUAL CODE ##
 #################
 # function to find start position of 1st exon for each gene - takes a GFF file, returns a dict of gene:start position pairs
-def UpstreamFinder(GFF, Fasta, UpstreamLength):
+def UpstreamFinder(GFF, Fasta, UpstreamLength, Label):
 	Genes = []
 	Chromosomes = {}
 	ExonStarts = {}
@@ -62,8 +70,8 @@ def UpstreamFinder(GFF, Fasta, UpstreamLength):
 					Start = temp[3]
 				elif Strand == "-":
 					Start = temp[4]
-				NameMatch = re.search("Parent\=[^\;]*",line)
-				Name = NameMatch.group().replace("Parent=","")
+				NameMatch = re.search(Label+"\=[^\;]*",line)
+				Name = NameMatch.group().replace(Label+"=","")
 				# add gene name to list
 				if Name not in Genes:
 					Genes.append(Name)
@@ -129,7 +137,7 @@ def UpstreamFinder(GFF, Fasta, UpstreamLength):
 	return(Combined)
 
 # final call
-result=UpstreamFinder(GFF = InputAnnotation, Fasta = InputFasta, UpstreamLength=Length)
+result=UpstreamFinder(GFF = InputAnnotation, Fasta = InputFasta, UpstreamLength=Length, Label=GeneLabel)
 OutputString = ""
 for i in result:
 	OutputString += i[0] + "\tUpstreamFinder\tUpstreamRegion\t" + str(i[1]) + "\t" + str(i[2]) + "\t.\t" + i[3] + "\t.\tID=" + i[4].rstrip("\n") + "\n"
