@@ -147,9 +147,12 @@ def CpG_content(annotation, fasta):
 #################
 # convert MethylExtract file to BED file
 input_bed = ME_to_BED(ME_file=methylation_file)
+# select unannotated cytosines (i.e. intersect annotation file with methylation BED file and output non-matches)
+system("bedtools intersect -v -a " + input_bed + " -b " + annotation_file + " > Unannotated.bed")
 
-# calculate mean methylation level for each feature in annotation file, and delete whole-genome bed file
+# calculate mean methylation level for each feature in annotation file
 meth_levels = Feature_Meth(meth_bed=input_bed,GFF=annotation_file)
+# delete whole-genome bed file
 remove(input_bed)
 # read in methylation levels
 meth_counts = pd.read_table(meth_levels, header = None)
