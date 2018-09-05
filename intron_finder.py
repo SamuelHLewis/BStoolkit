@@ -47,13 +47,9 @@ def exon_finder(GFF, Label):
 			if temp[2] == "CDS":
 				# extract data from GFF fields
 				Chromosome = temp[0]
-				Strand = temp[6]
-				if Strand == "+":
-					Start = temp[3]
-					End = temp[4]
-				elif Strand == "-":
-					Start = temp[4]
-					End = temp[3]
+				Strand = temp[6]	
+				Start = temp[3]
+				End = temp[4]
 				NameMatch = re.search(Label+"\=[^\;]*",line)
 				Name = NameMatch.group().replace(Label+"=","")
 				# add gene name to list
@@ -75,45 +71,52 @@ def exon_finder(GFF, Label):
 				# add strand to dict if it isn't there already
 				if Name not in Strands:
 					Strands[Name] = Strand
-	# sort start coordinates for each gene into ascending order
+	# create pairs of coordinates for start-end of each exon
 	for i in ExonStarts:
 		ExonStarts[i].sort()
+	for i in ExonEnds:
+		ExonEnds[i].sort()
+	ExonStartEndPairs = {}
+	for i in ExonStarts:
+		StartEndPairs = []
+		for j in range(len(ExonStarts[i])):
+			pair = str(ExonStarts[i][j]) + "-" + str(ExonEnds[i][j])
+			StartEndPairs.append(pair)
+		ExonStartEndPairs[i] = StartEndPairs	
+	# screen out duplicate pairs of coordinates
+	ExonStartEndPairsNR = {}
+	for i in ExonStartEndPairs:
+		ExonStartEndPairsNR[i] = list(set(ExonStartEndPairs[i]))
+	# convert these non-redundant pairs into two dicts (Start and End)
+	ExonStartsNR = {}
+	ExonEndsNR = {}
+	for i in ExonStartEndPairsNR:
+		starts = []
+		ends = []
+		for j in ExonStartEndPairsNR[i]:
+			starts.append(int(j.split("-")[0]))
+			ends.append(int(j.split("-")[1]))
+		ExonStartsNR[i] = sorted(starts)
+		ExonEndsNR[i] = sorted(ends)
 
 	# find introns
 	IntronStarts = {}
 	IntronEnds = {}
 	# go through each gene, calculating the start and end of each intron based on the starts and ends of each exon
-	for gene in ExonStarts:
-		# plus strand genes
-		if Strands[gene] == "+":
-			# go through each exon (apart from the last), calculating the start and end of the corresponding intron
-			# defining the range here as 0 to (1 - number of exons) to stop after the penultimate exon
-			for exon in range(0,len(ExonStarts[gene])-1):
-				if gene not in IntronStarts:
-					# intron starts 1 base downstream of end of upstream exon
-					IntronStarts[gene] = [ExonEnds[gene][exon]+1]
-					# intron ends 1 base upstream of start of downstream exon
-					IntronEnds[gene] = [ExonStarts[gene][exon+1]-1]
-				else:
-					# intron starts 1 base downstream of end of upstream exon
-					IntronStarts[gene].append(ExonEnds[gene][exon]+1)
-					# intron starts 1 base upstream of start of downstream exon
-					IntronEnds[gene].append(ExonStarts[gene][exon+1]-1)
-		# minus strand genes
-		elif Strands[gene] == "-":
-			# go through each exon (apart from the first), calculating the start and end of the corresponding intron
-			# defining the range here as 1 to (number of exons) to start after the first exon
-			for exon in range(0,len(ExonStarts[gene])-1):
-				if gene not in IntronStarts:
-					# intron starts 1 base downstream of end of upstream exon
-					IntronStarts[gene] = [ExonStarts[gene][exon]+1]
-					# intron ends 1 base upstream of start of downstream exon
-					IntronEnds[gene] = [ExonEnds[gene][exon+1]-1]
-				else:
-					# intron starts 1 base downstream of end of upstream exon
-					IntronStarts[gene].append(ExonStarts[gene][exon]+1)
-					# intron starts 1 base upstream of start of downstream exon
-					IntronEnds[gene].append(ExonEnds[gene][exon+1]-1)	
+	for gene in ExonStartsNR:
+		# go through each exon (apart from the last), calculating the start and end of the corresponding intron
+		# defining the range here as 0 to (1 - number of exons) to stop after the penultimate exon
+		for exon in range(0,len(ExonStartsNR[gene])-1):
+			if gene not in IntronStarts:
+				# intron starts 1 base downstream of end of upstream exon
+				IntronStarts[gene] = [ExonEndsNR[gene][exon]+1]
+				# intron ends 1 base upstream of start of downstream exon
+				IntronEnds[gene] = [ExonStartsNR[gene][exon+1]-1]
+			else:
+				# intron starts 1 base downstream of end of upstream exon
+				IntronStarts[gene].append(ExonEndsNR[gene][exon]+1)
+				# intron starts 1 base upstream of start of downstream exon
+				IntronEnds[gene].append(ExonStartsNR[gene][exon+1]-1)
 	# find genes that have introns
 	GenesWithIntrons = []
 	for gene in Genes:
