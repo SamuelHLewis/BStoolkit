@@ -173,8 +173,8 @@ if fasta_file != False:
 	# before running, check whether the fasta index exists, and delete it if so (if the index exists but is older than the fasta file, any changes to the fasta file will break the program, so the index needs to be made afresh)
 	if os.path.isfile(fasta_file + ".fai") is True:
 		os.remove(fasta_file + ".fai")
-	print("Calculating CpG %")
-	CpG_percentage = CpG_content(annotation = annotation_file, fasta = fasta_file)
+	print("Calculating normalized CpG content")
+	CpG_normalized = CpG_content(annotation = annotation_file, fasta = fasta_file)
 
 # if RNAseq file has been specified, count and read in RNAseq reads
 if RNAseq_file != False:
@@ -204,7 +204,7 @@ if bowtie1_file != False:
 combined_data = pd.concat([meth_counts], axis = 1)
 combined_data.columns = ["Chromosome", "Program", "Feature", "Start", "End", "INTENTIONALLYBLANK", "Strand", "INTENTIONALLYBLANK", "Name", "IndividualCytosineMethylation", "MeanMethylation"]
 if fasta_file != False:
-	combined_data["CpG (%)"] = CpG_percentage
+	combined_data["CpG"] = CpG_normalized
 if RNAseq_file != False:
 	combined_data["RNASeq"] = RNA_counts.iloc[:,-1]
 if siRNA_file != False:
