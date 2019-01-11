@@ -151,7 +151,7 @@ def CpG_content(annotation, fasta):
 		else:
 			CpG_content_normalized = 0.0
 		CpG_norm.append(CpG_content_normalized)
-        return(CpG_norm)
+	return(CpG_norm)
 
 #################
 ## ACTUAL CODE ##
